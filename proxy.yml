@@ -1,0 +1,61 @@
+---
+- hosts: proxies
+  gather_facts: false
+  become: true
+  vars:
+    base_user: ec2-user
+
+  tasks:
+    - name: Ensure and install packages
+      yum: state=present name={{ item }} update_cache=true
+      with_items:
+        # - python36-pip
+        - nginx
+        - nginx-mod-stream
+
+    # - name: Create pip-36 symlink
+    #   file:
+    #     src: "/usr/bin/pip-3.6"
+    #     dest: "/usr/bin/pip"
+    #     state: link
+
+    - name: Install ansible
+      pip:
+        name: ansible
+
+    - name: Copy nginx.conf
+      copy:
+        src: ./files/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        mode: 0644
+      register: nginx_conf
+
+    - name: Reload nginx, if nginx.conf changed
+      service:
+        name: nginx
+        state: reloaded
+      when: nginx_conf.changed
+
+    - name: Copy ansible playbooks
+      copy:
+        src: ./files/ansible/
+        dest: "/home/{{ base_user }}/ansible/"
+        owner: "{{ base_user }}"
+        group: "{{ base_user }}"
+        directory_mode: yes
+        mode: u=rw,g=r,o=r
+
+    - name: Create ansible directory
+      file:
+        path: "{{ item }}"
+        mode: u=rwx,g=rx,o=rx
+      with_items:
+        - "/home/{{ base_user }}/ansible/"
+        - "/home/{{ base_user }}/ansible/docker"
+
+    - name: Add cron task to manage nodes
+      cron:
+        name: "Update and cleanup nodes"
+        hour: "12"
+        user: "{{ base_user }}"
+        job: "ansible-playbook -i /home/{{ base_user }}/ansible/hosts /home/{{ base_user }}/ansible/update.yml"

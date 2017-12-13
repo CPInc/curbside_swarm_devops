@@ -1,0 +1,12 @@
+---
+- hosts: curb
+  remote_user: ec2-user
+  gather_facts: false
+  become: true
+
+  tasks:
+    - name: Update and upgrade apt packages
+      yum: name=* state=latest update_cache=true
+
+    - name: Prune docker files
+      command: docker system prune -a -f

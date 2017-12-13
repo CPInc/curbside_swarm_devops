@@ -1,0 +1,4 @@
+[curb]
+curb1 ansible_ssh_host=172.16.1.67 ansible_ssh_port=22
+curb2 ansible_ssh_host=172.16.1.182 ansible_ssh_port=22
+curb3 ansible_ssh_host=172.16.1.230 ansible_ssh_port=22

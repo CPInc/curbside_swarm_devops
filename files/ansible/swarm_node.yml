@@ -1,0 +1,24 @@
+---
+- hosts: curb
+  remote_user: ec2-user
+  gather_facts: false
+  serial: 1
+  become: true
+
+  tasks:
+    - name: Ensure and install packages
+      yum: state=present name={{ item }} update_cache=true
+      with_items:
+        - docker
+
+    - name: Update daemon.json configuration
+      copy:
+        src: ./docker/daemon.json
+        dest: /etc/docker/daemon.json
+      register: daemon_json
+
+    - name: Restart docker service if daemon.json changed
+      service:
+        name: docker
+        state: reloaded
+      when: daemon_json.changed
